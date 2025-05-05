@@ -27,7 +27,7 @@ const JoinSessionForm: React.FC<JoinSessionFormProps> = ({ onSubmit }) => {
       return;
     }
     
-    const finalRoomId = isNewRoom ? `room_${Math.random().toString(36).substring(2, 9)}` : roomId;
+    const finalRoomId = isNewRoom ? `room_${Math.floor(100000 + Math.random() * 900000).toString()}` : roomId;
     onSubmit(finalRoomId, username, isNewRoom);
   };
   

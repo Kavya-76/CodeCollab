@@ -2,8 +2,11 @@ import React from 'react';
 import {toast} from "sonner"
 import JoinSessionForm from '@/components/JoinSessionForm.js';
 import CodeSnippet from '@/components/CodeSnippet.js';
+import { useNavigate } from 'react-router-dom';
 
 const Home = () => {
+  const navigate = useNavigate();
+
   const handleJoinSession = (roomId: string, username: string, isNewRoom: boolean) => {
     // This is where you would handle the logic to join/create a room
     // For now, we'll just show a toast notification
@@ -15,6 +18,11 @@ const Home = () => {
     
     console.log({ roomId, username, isNewRoom });
     // Future implementation: Navigate to the actual coding room
+    navigate(`/room/${roomId}`, {
+      state: {
+        username,
+      },
+    });
   };
 
   return (
