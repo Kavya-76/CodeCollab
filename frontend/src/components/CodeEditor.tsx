@@ -12,7 +12,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
   value,
   onChange,
 }) => {
-    
+
   const handleEditorChange = (value: string | undefined) => {
     if (value !== undefined) {
       onChange(value);

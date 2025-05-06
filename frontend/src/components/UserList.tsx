@@ -9,9 +9,10 @@ interface User {
 
 interface UsersListProps {
   users: User[];
+  isCollapsed?: boolean;
 }
 
-const UsersList: React.FC<UsersListProps> = ({ users }) => {
+const UsersList: React.FC<UsersListProps> = ({ users, isCollapsed = false }) => {
   // Function to get initials from username
   const getInitials = (name: string) => {
     return name
@@ -45,9 +46,10 @@ const UsersList: React.FC<UsersListProps> = ({ users }) => {
       <div className="space-y-2">
         {users.map(user => (
           <div 
-            key={user.id}
-            className="flex items-center gap-3 p-2 rounded-md hover:bg-accent/50 transition-colors"
-          >
+          key={user.id}
+          className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 p-2'} rounded-md hover:bg-accent/50 transition-colors`}
+          title={isCollapsed ? user.username : undefined}
+        >
             <Avatar className={`h-8 w-8 ${getAvatarColor(user.username)}`}>
               <AvatarFallback>{getInitials(user.username)}</AvatarFallback>
             </Avatar>

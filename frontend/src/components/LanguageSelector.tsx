@@ -22,7 +22,7 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({
     { id: 'python', name: 'Python', languageId: 71 },
     { id: 'cpp', name: 'C++', languageId: 54 },
     { id: 'c', name: 'C', languageId: 50 },
-    { id: 'java', name: 'Java', languageId: 25 },
+    { id: 'java', name: 'Java', languageId: 62 },
   ];
 
   const currentLanguageName = languages.find(lang => lang.id === currentLanguage)?.name || currentLanguage;
