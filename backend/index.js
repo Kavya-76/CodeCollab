@@ -5,6 +5,7 @@ import { Server } from "socket.io";
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
+const cors = require('cors');
 
 // Serve static files if needed (like frontend)
 app.get("/", (req, res) => {

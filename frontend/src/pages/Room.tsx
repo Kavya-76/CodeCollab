@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import CodeEditor from "@/components/CodeEditor.js";
 import UsersList from "@/components/UserList.js";
 import LanguageSelector from "@/components/LanguageSelector.js";
 import { Button } from "@/components/ui/button.js";
 import { Play } from "lucide-react";
 import { toast } from "sonner";
+import { Navigate } from "react-router-dom";
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -14,6 +15,7 @@ import {
 
 const Room = () => {
   const { roomId } = useParams();
+  const navigate = useNavigate();
   const [code, setCode] = useState("// Start coding here...");
   const [language, setLanguage] = useState("javascript");
   const [languageId, setLanguageId] = useState(63);
@@ -112,14 +114,14 @@ const Room = () => {
         {/* Users Sidebar */}
         <ResizablePanel
           defaultSize={15}
-          minSize={5}
+          // minSize={5}
           maxSize={30}
           className="bg-secondary"
         >
           <UsersList users={users} isCollapsed={sidebarCollapsed} />
         </ResizablePanel>
 
-        <ResizableHandle />
+        <ResizableHandle withHandle />
 
         {/* Main Content Area */}
         <ResizablePanel defaultSize={85}>
@@ -128,9 +130,9 @@ const Room = () => {
             <header className="py-4 px-4 border-b border-border">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-4">
-                  <h1 className="text-xl font-bold">
-                    <span className="text-code-blue">Collab</span>
-                    <span className="text-white">Code</span>
+                  <h1 className="text-xl font-bold cursor-pointer" onClick={()=>navigate("/")}>
+                    <span className="text-code-blue">Code</span>
+                    <span className="text-white">Collab</span>
                   </h1>
                   <div className="bg-secondary px-3 py-1 rounded-full text-sm">
                     Room: {roomId}
@@ -165,7 +167,7 @@ const Room = () => {
                   </div>
                 </ResizablePanel>
                 <ResizableHandle withHandle />
-                <ResizablePanel defaultSize={30} minSize={15}>
+                <ResizablePanel defaultSize={30} minSize={5} className="mt-2">
                   <div className="h-full bg-secondary rounded-md border border-border p-4 overflow-auto">
                     <h2 className="text-sm font-bold mb-2 text-muted-foreground">
                       Output
