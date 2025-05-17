@@ -52,15 +52,32 @@ const Room = () => {
       console.log(`${leftUser.username} left the room`);
     });
 
+    socket.on("code-change", (newCode) => {
+      setCode(newCode);
+    });
+
+    socket.on("output-result", (result) => {
+      setOutput(result);
+    });
+
+    socket.on("execution-locked", ({ username }) => {
+      setIsExecuting(true);
+      toast(`${username} is running the code...`);
+    });
+
+    socket.on("execution-unlocked", () => {
+      setIsExecuting(false);
+    });
+
     // Handle is user active or not
-    const handleVisibilityChange = ()=>{
+    const handleVisibilityChange = () => {
       const isActive = !document.hidden;
       socket.emit("user-activity", {
         roomId,
         userId: socket.id,
-        isActive
-      })
-    }
+        isActive,
+      });
+    };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
@@ -69,12 +86,16 @@ const Room = () => {
     // automatically leaves the room if page is refreshed or closed
     return () => {
       socket.emit("leave-room", { roomId, username });
-      
-      document.removeEventListener("visibilitychange", handleVisibilityChange)
+
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [roomId, username]);
 
   const handleRun = async () => {
+    if (!roomId || !username) return;
+
+    socket.emit("start-execution", { roomId, username });
+
     setIsExecuting(true);
     setOutput("");
 
@@ -129,11 +150,16 @@ const Room = () => {
         "No output";
 
       setOutput(outputText);
-    } catch (err) {
+      socket.emit("output-result", { roomId, output: outputText });
+    } catch (err: any) {
       console.error(err);
-      setOutput("Error executing code.");
+
+      const errorText = `Error executing code\n${err}`;
+      setOutput(errorText);
+      socket.emit("output-result", { roomId, output: errorText });
     } finally {
       setIsExecuting(false);
+      socket.emit("end-execution", { roomId });
     }
   };
 
@@ -209,7 +235,10 @@ const Room = () => {
                     <CodeEditor
                       language={language}
                       value={code}
-                      onChange={setCode}
+                      onChange={(newCode)=>{
+                          setCode(newCode);
+                          socket.emit("code-change",{roomId, code: newCode});
+                      }}
                     />
                   </div>
                 </ResizablePanel>

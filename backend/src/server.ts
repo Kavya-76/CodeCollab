@@ -27,6 +27,8 @@ interface User {
 }
 
 const roomUsers: Record<string, User[]> = {};
+const roomCode: Record<string, string> = {};
+const roomOutput: Record<string, string> = {};
 
 app.get("/", (req, res) => {
   res.send("Socket.IO Server is running!");
@@ -62,10 +64,6 @@ io.on("connection", (socket: CustomSocket) => {
     }
   });
 
-  socket.on("code-change", ({ roomId, code }) => {
-    socket.to(roomId).emit("code-change", code);
-  });
-
   socket.on("leave-room", ({ roomId, username }) => {
     socket.leave(roomId);
     roomUsers[roomId] = roomUsers[roomId]?.filter(
@@ -77,6 +75,24 @@ io.on("connection", (socket: CustomSocket) => {
     socket.to(roomId).emit("user-left", { id: socket.id, username });
   });
 
+  socket.on("code-change", ({ roomId, code }) => {
+    roomCode[roomId] = code;
+    socket.to(roomId).emit("code-change", code);
+  });
+
+  socket.on("output-result", ({ roomId, output }) => {
+    roomOutput[roomId] = output;
+    socket.to(roomId).emit("output-result", output);
+  });
+
+  socket.on("start-execution", ({ roomId, username }) => {
+    socket.to(roomId).emit("execution-locked", { username });
+  });
+
+  socket.on("end-execution", ({ roomId }) => {
+    socket.to(roomId).emit("execution-unlocked");
+  });
+
   socket.on("disconnect", () => {
     const { roomId, username } = socket;
     if (!roomId) return;
@@ -84,7 +100,11 @@ io.on("connection", (socket: CustomSocket) => {
     roomUsers[roomId] = roomUsers[roomId]?.filter(
       (user) => user.id !== socket.id
     );
-    if (roomUsers[roomId]?.length === 0) delete roomUsers[roomId];
+    if (roomUsers[roomId]?.length === 0) {
+      delete roomUsers[roomId];
+      delete roomCode[roomId];
+      delete roomOutput[roomId];
+    }
 
     io.to(roomId).emit("user-list", roomUsers[roomId] || []);
     socket.to(roomId).emit("user-left", { id: socket.id, username });
