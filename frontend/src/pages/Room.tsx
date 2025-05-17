@@ -1,41 +1,85 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import CodeEditor from "@/components/CodeEditor.js";
 import UsersList from "@/components/UserList.js";
 import LanguageSelector from "@/components/LanguageSelector.js";
 import { Button } from "@/components/ui/button.js";
 import { Play } from "lucide-react";
 import { toast } from "sonner";
-import { Navigate } from "react-router-dom";
 import {
   ResizablePanelGroup,
   ResizablePanel,
   ResizableHandle,
 } from "@/components/ui/resizable.js";
+import socket from "@/utils/socket.js";
 
 const Room = () => {
-  const { roomId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const { roomId } = useParams();
+  const username = location.state?.username;
+
   const [code, setCode] = useState("// Start coding here...");
   const [language, setLanguage] = useState("javascript");
   const [languageId, setLanguageId] = useState(63);
   const [output, setOutput] = useState("");
   const [isExecuting, setIsExecuting] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [users, setUsers] = useState([]);
 
-  // This would be replaced with actual user data from your backend
-  const [users, setUsers] = useState([
-    { id: "1", username: "You", isActive: true },
-    { id: "2", username: "Alex", isActive: true },
-    { id: "3", username: "Sam", isActive: false },
-  ]);
+  // no username found
+  useEffect(() => {
+    if (!username) navigate("/");
+  }, [username]);
+
+  // to handle the user join event
+  useEffect(() => {
+    if (!username || !roomId) return;
+
+    socket.emit("join-room", { roomId, username });
+
+    socket.on("user-list", (usersPresent) => {
+      console.log(usersPresent);
+      setUsers(usersPresent);
+    });
+
+    socket.on("user-joined", (newUser) => {
+      console.log(`${newUser.username} joined the room`);
+    });
+
+    socket.on("user-left", (leftUser) => {
+      console.log(`${leftUser.username} left the room`);
+    });
+
+    // Handle is user active or not
+    const handleVisibilityChange = ()=>{
+      const isActive = !document.hidden;
+      socket.emit("user-activity", {
+        roomId,
+        userId: socket.id,
+        isActive
+      })
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    handleVisibilityChange();
+
+    // automatically leaves the room if page is refreshed or closed
+    return () => {
+      socket.emit("leave-room", { roomId, username });
+      
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
+    };
+  }, [roomId, username]);
 
   const handleRun = async () => {
     setIsExecuting(true);
     setOutput("");
 
     const encodedCode = btoa(code);
-    
+
     const headers = {
       "Content-Type": "application/json",
       "X-RapidAPI-Key": import.meta.env.VITE_XRapidAPIKey, // use same key for both
@@ -130,7 +174,10 @@ const Room = () => {
             <header className="py-4 px-4 border-b border-border">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-4">
-                  <h1 className="text-xl font-bold cursor-pointer" onClick={()=>navigate("/")}>
+                  <h1
+                    className="text-xl font-bold cursor-pointer"
+                    onClick={() => navigate("/")}
+                  >
                     <span className="text-code-blue">Code</span>
                     <span className="text-white">Collab</span>
                   </h1>
@@ -168,10 +215,12 @@ const Room = () => {
                 </ResizablePanel>
                 <ResizableHandle withHandle />
                 <ResizablePanel defaultSize={30} minSize={5} className="mt-2">
-                  <div className="h-full bg-secondary rounded-md border border-border p-4 overflow-auto">
-                    <h2 className="text-sm font-bold mb-2 text-muted-foreground">
-                      Output
-                    </h2>
+                  <div className="h-full bg-secondary rounded-md border border-border overflow-auto ">
+                    <div className="h-8.5 border-b-blue-950 border-2 flex items-center">
+                      <h2 className="font-bold text-muted-foreground ml-2">
+                        Output
+                      </h2>
+                    </div>
                     <pre className="text-sm font-mono">
                       {output || "Run your code to see output here..."}
                     </pre>
