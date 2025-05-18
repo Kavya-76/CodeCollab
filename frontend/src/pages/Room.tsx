@@ -21,12 +21,12 @@ const Room = () => {
   const username = location.state?.username;
 
   const [code, setCode] = useState("// Start coding here...");
-  const [language, setLanguage] = useState("javascript");
-  const [languageId, setLanguageId] = useState(63);
   const [output, setOutput] = useState("");
   const [isExecuting, setIsExecuting] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [users, setUsers] = useState([]);
+  const [language, setLanguage] = useState("javascript");
+  const [languageId, setLanguageId] = useState(63);
 
   // no username found
   useEffect(() => {
@@ -59,6 +59,11 @@ const Room = () => {
     socket.on("output-result", (result) => {
       setOutput(result);
     });
+
+    socket.on("language-change", ({newLanguage, newLanguageId}) => {
+      setLanguage(newLanguage);
+      setLanguageId(newLanguageId);
+    })
 
     socket.on("execution-locked", ({ username }) => {
       setIsExecuting(true);
@@ -164,6 +169,7 @@ const Room = () => {
   };
 
   const handleLanguageChange = (newLanguage: string, newLanguageId: number) => {
+    socket.emit("language-change", { roomId, language:newLanguage, languageId:newLanguageId  });
     setLanguage(newLanguage);
     setLanguageId(newLanguageId);
     toast(`Language changed to ${newLanguage}`);
