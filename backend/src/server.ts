@@ -2,6 +2,9 @@ import express from "express";
 import http from "http";
 import { Server, Socket } from "socket.io";
 import cors from "cors";
+import dotenv from "dotenv";
+dotenv.config();
+
 
 const app = express();
 app.use(cors());
@@ -26,10 +29,16 @@ interface User {
   isActive?: boolean;
 }
 
+type RoomState = {
+  code?: string;
+  output?: string;
+  language?: string;
+  languageId?: string | number;
+};
+
+
 const roomUsers: Record<string, User[]> = {};
-// const roomCode: Record<string, string> = {};
-// const roomOutput: Record<string, string> = {};
-const roomState = new Map();
+const roomState = new Map<string, RoomState>();
 
 app.get("/", (req, res) => {
   res.send("Socket.IO Server is running!");
@@ -59,7 +68,7 @@ io.on("connection", (socket: CustomSocket) => {
     if (roomUsers[roomId]) {
       const user = roomUsers[roomId].find((u) => u.id === userId);
       if (user) {
-        (user as any).isActive = isActive;
+        user.isActive = isActive;
         io.to(roomId).emit("user-list", roomUsers[roomId]);
       }
     }
