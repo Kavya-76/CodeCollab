@@ -1,13 +1,16 @@
-import React from 'react';
-import {toast} from "sonner"
-import JoinSessionForm from '@/components/JoinSessionForm.js';
-import CodeSnippet from '@/components/CodeSnippet.js';
-import { useNavigate } from 'react-router-dom';
+import { toast } from "sonner";
+import JoinSessionForm from "@/components/JoinSessionForm.js";
+import CodeSnippet from "@/components/CodeSnippet.js";
+import { useNavigate } from "react-router-dom";
 
 const Home = () => {
   const navigate = useNavigate();
 
-  const handleJoinSession = (roomId: string, username: string, isNewRoom: boolean) => {
+  const handleJoinSession = (
+    roomId: string,
+    username: string,
+    isNewRoom: boolean
+  ) => {
     // This is where you would handle the logic to join/create a room
     // For now, we'll just show a toast notification
     if (isNewRoom) {
@@ -15,7 +18,7 @@ const Home = () => {
     } else {
       toast.success(`Joining room ${roomId}. Welcome, ${username}!`);
     }
-    
+
     console.log({ roomId, username, isNewRoom });
     // Future implementation: Navigate to the actual coding room
     navigate(`/room/${roomId}`, {
@@ -35,7 +38,7 @@ const Home = () => {
           </h1>
         </div>
       </header>
-      
+
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="grid md:grid-cols-2 gap-8 items-center justify-items-center">
           <div className="flex flex-col space-y-6 max-w-md">
@@ -48,15 +51,16 @@ const Home = () => {
                 </span>
               </h2>
               <p className="text-muted-foreground mb-2">
-                Collaborate with your team on code projects with real-time synchronization. 
-                Create a room or join an existing one to start coding together instantly.
+                Collaborate with your team on code projects with real-time
+                synchronization. Create a room or join an existing one to start
+                coding together instantly.
               </p>
             </div>
             <div className="w-full">
               <JoinSessionForm onSubmit={handleJoinSession} />
             </div>
           </div>
-          
+
           <div className="w-full flex justify-center items-center order-first md:order-last">
             <div className="animate-pulse-blue rounded-lg p-1">
               <CodeSnippet />
@@ -64,12 +68,15 @@ const Home = () => {
           </div>
         </div>
       </main>
-      
+
       <footer className="container mx-auto py-6 px-4 text-center text-sm text-muted-foreground">
-        <p>CodeCollab &copy; {new Date().getFullYear()} - Write better code together.</p>
+        <p>
+          CodeCollab &copy; {new Date().getFullYear()} - Write better code
+          together.
+        </p>
       </footer>
     </div>
   );
-}
+};
 
-export default Home
+export default Home;

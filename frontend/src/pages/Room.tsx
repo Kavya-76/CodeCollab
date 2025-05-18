@@ -60,10 +60,10 @@ const Room = () => {
       setOutput(result);
     });
 
-    socket.on("language-change", ({newLanguage, newLanguageId}) => {
+    socket.on("language-change", ({ newLanguage, newLanguageId }) => {
       setLanguage(newLanguage);
       setLanguageId(newLanguageId);
-    })
+    });
 
     socket.on("execution-locked", ({ username }) => {
       setIsExecuting(true);
@@ -156,7 +156,7 @@ const Room = () => {
 
       setOutput(outputText);
       socket.emit("output-result", { roomId, output: outputText });
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
 
       const errorText = `Error executing code\n${err}`;
@@ -169,7 +169,11 @@ const Room = () => {
   };
 
   const handleLanguageChange = (newLanguage: string, newLanguageId: number) => {
-    socket.emit("language-change", { roomId, language:newLanguage, languageId:newLanguageId  });
+    socket.emit("language-change", {
+      roomId,
+      language: newLanguage,
+      languageId: newLanguageId,
+    });
     setLanguage(newLanguage);
     setLanguageId(newLanguageId);
     toast(`Language changed to ${newLanguage}`);
@@ -241,9 +245,9 @@ const Room = () => {
                     <CodeEditor
                       language={language}
                       value={code}
-                      onChange={(newCode)=>{
-                          setCode(newCode);
-                          socket.emit("code-change",{roomId, code: newCode});
+                      onChange={(newCode) => {
+                        setCode(newCode);
+                        socket.emit("code-change", { roomId, code: newCode });
                       }}
                     />
                   </div>
