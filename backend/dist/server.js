@@ -12,8 +12,9 @@ const io = new Server(server, {
     },
 });
 const roomUsers = {};
-const roomCode = {};
-const roomOutput = {};
+// const roomCode: Record<string, string> = {};
+// const roomOutput: Record<string, string> = {};
+const roomState = new Map();
 app.get("/", (req, res) => {
     res.send("Socket.IO Server is running!");
 });
@@ -51,12 +52,19 @@ io.on("connection", (socket) => {
         socket.to(roomId).emit("user-left", { id: socket.id, username });
     });
     socket.on("code-change", ({ roomId, code }) => {
-        roomCode[roomId] = code;
         socket.to(roomId).emit("code-change", code);
+        const state = roomState.get(roomId) || {};
+        roomState.set(roomId, Object.assign(Object.assign({}, state), { code }));
     });
     socket.on("output-result", ({ roomId, output }) => {
-        roomOutput[roomId] = output;
         socket.to(roomId).emit("output-result", output);
+        const state = roomState.get(roomId) || {};
+        roomState.set(roomId, Object.assign(Object.assign({}, state), { output }));
+    });
+    socket.on("language-change", ({ roomId, language, languageId }) => {
+        socket.to(roomId).emit("language-change", { newLanguage: language, newLanguageId: languageId });
+        const state = roomState.get(roomId) || {};
+        roomState.set(roomId, Object.assign(Object.assign({}, state), { language, languageId }));
     });
     socket.on("start-execution", ({ roomId, username }) => {
         socket.to(roomId).emit("execution-locked", { username });
@@ -72,8 +80,7 @@ io.on("connection", (socket) => {
         roomUsers[roomId] = (_a = roomUsers[roomId]) === null || _a === void 0 ? void 0 : _a.filter((user) => user.id !== socket.id);
         if (((_b = roomUsers[roomId]) === null || _b === void 0 ? void 0 : _b.length) === 0) {
             delete roomUsers[roomId];
-            delete roomCode[roomId];
-            delete roomOutput[roomId];
+            roomState.delete(roomId);
         }
         io.to(roomId).emit("user-list", roomUsers[roomId] || []);
         socket.to(roomId).emit("user-left", { id: socket.id, username });
