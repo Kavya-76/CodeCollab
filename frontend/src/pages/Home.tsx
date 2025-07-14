@@ -2,9 +2,11 @@ import { toast } from "sonner";
 import JoinSessionForm from "@/components/JoinSessionForm.js";
 import CodeSnippet from "@/components/CodeSnippet.js";
 import { useNavigate } from "react-router-dom";
+import { useFirebase } from "../context/Firebase.js"
 
 const Home = () => {
   const navigate = useNavigate();
+  const {user, loading} = useFirebase();
 
   const handleJoinSession = (
     roomId: string,
@@ -38,6 +40,7 @@ const Home = () => {
           </h1>
         </div>
       </header>
+      <h2>Welcome {user?.displayName}</h2>
 
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="grid md:grid-cols-2 gap-8 items-center justify-items-center">
