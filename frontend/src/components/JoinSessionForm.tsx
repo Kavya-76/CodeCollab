@@ -2,14 +2,20 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button.js';
 import { Input } from '@/components/ui/input.js';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card.js';
-import {toast} from "sonner"
-import { UserRound, KeyRound } from 'lucide-react';
+import { toast } from 'sonner';
+import { UserRound, KeyRound, ArrowLeft } from 'lucide-react';
 
 interface JoinSessionFormProps {
   onSubmit: (roomId: string, username: string, isNewRoom: boolean) => void;
+  onBack?: () => void;
+  isGuestMode?: boolean;
 }
 
-const JoinSessionForm: React.FC<JoinSessionFormProps> = ({ onSubmit }) => {
+const JoinSessionForm: React.FC<JoinSessionFormProps> = ({ 
+  onSubmit, 
+  onBack, 
+  isGuestMode = false 
+}) => {
   const [roomId, setRoomId] = useState('');
   const [username, setUsername] = useState('');
   const [isCreating, setIsCreating] = useState(false);
@@ -27,14 +33,26 @@ const JoinSessionForm: React.FC<JoinSessionFormProps> = ({ onSubmit }) => {
       return;
     }
     
-    const finalRoomId = isNewRoom ? `room_${Math.floor(100000 + Math.random() * 900000).toString()}` : roomId;
+    const finalRoomId = isNewRoom ? `room_${Math.random().toString(36).substring(2, 9)}` : roomId;
     onSubmit(finalRoomId, username, isNewRoom);
   };
   
   return (
     <Card className="w-full max-w-md backdrop-blur-sm bg-card/80 border-border/60">
       <CardHeader>
+        {onBack && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onBack}
+            className="w-fit mb-2 -mt-2"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
+        )}
         <CardTitle className="text-center">
+          {isGuestMode && "Guest Mode - "}
           {isCreating ? "Create a New Coding Room" : "Join Existing Coding Room"}
         </CardTitle>
       </CardHeader>

@@ -30,6 +30,8 @@ const Room = () => {
 
   // no username found
   useEffect(() => {
+    console.log("No user detected");
+    
     if (!username) navigate("/");
   }, [username]);
 

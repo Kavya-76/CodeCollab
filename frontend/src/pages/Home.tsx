@@ -1,12 +1,13 @@
+import React, { useState } from "react";
 import { toast } from "sonner";
 import JoinSessionForm from "@/components/JoinSessionForm.js";
+import AuthButtons from "@/components/AuthButtons.js";
 import CodeSnippet from "@/components/CodeSnippet.js";
 import { useNavigate } from "react-router-dom";
-import { useFirebase } from "../context/Firebase.js"
 
-const Home = () => {
+const Index = () => {
   const navigate = useNavigate();
-  const {user, loading} = useFirebase();
+  const [showGuestForm, setShowGuestForm] = useState(false);
 
   const handleJoinSession = (
     roomId: string,
@@ -14,7 +15,6 @@ const Home = () => {
     isNewRoom: boolean
   ) => {
     // This is where you would handle the logic to join/create a room
-    // For now, we'll just show a toast notification
     if (isNewRoom) {
       toast.success(`Created new room ${roomId}. Welcome, ${username}!`);
     } else {
@@ -22,12 +22,20 @@ const Home = () => {
     }
 
     console.log({ roomId, username, isNewRoom });
-    // Future implementation: Navigate to the actual coding room
+    // Navigate to the room page
     navigate(`/room/${roomId}`, {
       state: {
         username,
       },
     });
+  };
+
+  const handleUserContinue = () => {
+    setShowGuestForm(true);
+  };
+
+  const handleBackToAuth = () => {
+    setShowGuestForm(false);
   };
 
   return (
@@ -40,7 +48,6 @@ const Home = () => {
           </h1>
         </div>
       </header>
-      <h2>Welcome {user?.displayName}</h2>
 
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="grid md:grid-cols-2 gap-8 items-center justify-items-center">
@@ -60,7 +67,15 @@ const Home = () => {
               </p>
             </div>
             <div className="w-full">
-              <JoinSessionForm onSubmit={handleJoinSession} />
+              {!showGuestForm ? (
+                <AuthButtons onUserContinue={handleUserContinue} />
+              ) : (
+                <JoinSessionForm
+                  onSubmit={handleJoinSession}
+                  onBack={handleBackToAuth}
+                  isGuestMode={true}
+                />
+              )}
             </div>
           </div>
 
@@ -74,7 +89,7 @@ const Home = () => {
 
       <footer className="container mx-auto py-6 px-4 text-center text-sm text-muted-foreground">
         <p>
-          CodeCollab &copy; {new Date().getFullYear()} - Write better code
+          CollabCode &copy; {new Date().getFullYear()} - Write better code
           together.
         </p>
       </footer>
@@ -82,4 +97,4 @@ const Home = () => {
   );
 };
 
-export default Home;
+export default Index;
