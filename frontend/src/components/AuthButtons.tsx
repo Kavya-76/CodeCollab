@@ -1,33 +1,54 @@
-
-import React from 'react';
-import { Button } from '@/components/ui/button.js';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.js';
-import { Separator } from '@/components/ui/separator.js';
-import { Github } from 'lucide-react';
+import React from "react";
+import { Button } from "@/components/ui/button.js";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card.js";
+import { useNavigate } from "react-router-dom";
+import { Separator } from "@/components/ui/separator.js";
+import { Github } from "lucide-react";
+import { googleLogin, githubLogin } from "@/auth/login.js";
+import axios from "axios"
 
 interface AuthButtonsProps {
   onUserContinue: () => void;
 }
 
 const AuthButtons: React.FC<AuthButtonsProps> = ({ onUserContinue }) => {
-  const handleGoogleLogin = () => {
-    // TODO: Implement Google OAuth login
-    console.log('Google login clicked');
-  };
-
-  const handleGithubLogin = () => {
-    // TODO: Implement GitHub OAuth login
-    console.log('GitHub login clicked');
+  const navigate = useNavigate();
+  const handleLogin = async (method: "google" | "github") => {
+    const user =
+      method === "google" ? await googleLogin() : await githubLogin();
+    if (user) {
+      try {
+        await axios.post("http://localhost:5000/api/auth/signup", {
+          uid: user.uid,
+          displayName: user.displayName,
+          email: user.email,
+          photoURL: user.photoURL,
+          provider: method,
+        });
+      } catch (error) {
+        console.error("❌ Failed to register user in backend:", error);
+      }
+      navigate("/dashboard");
+    }
   };
 
   return (
     <Card className="w-full max-w-md backdrop-blur-sm bg-card/80 border-border/60">
       <CardHeader>
-        <CardTitle className="text-center">Get Started with CollabCode</CardTitle>
+        <CardTitle className="text-center">
+          Get Started with CollabCode
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <Button
-          onClick={handleGoogleLogin}
+          onClick={() => {
+            handleLogin("google");
+          }}
           variant="outline"
           className="w-full flex items-center gap-2 h-11"
         >
@@ -53,7 +74,7 @@ const AuthButtons: React.FC<AuthButtonsProps> = ({ onUserContinue }) => {
         </Button>
 
         <Button
-          onClick={handleGithubLogin}
+          onClick={() => handleLogin("github")}
           variant="outline"
           className="w-full flex items-center gap-2 h-11"
         >
