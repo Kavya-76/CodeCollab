@@ -1,59 +1,99 @@
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button.js';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.js';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.js';
-import { Badge } from '@/components/ui/badge.js';
+import React, { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button.js";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card.js";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar.js";
+import { Badge } from "@/components/ui/badge.js";
 import { toast } from "sonner";
-import { useNavigate } from 'react-router-dom';
-import { Plus, Code, Clock, Users, Settings, LogOut, Github } from 'lucide-react';
-import JoinRoomDialog from '@/components/JoinRoomDialog.js';
-import ProfileDialog from '@/components/ProfileDialog.js';
+import { useNavigate } from "react-router-dom";
+import {
+  Plus,
+  Code,
+  Clock,
+  Users,
+  Settings,
+  LogOut,
+  Github,
+} from "lucide-react";
+import JoinRoomDialog from "@/components/JoinRoomDialog.js";
+import ProfileDialog from "@/components/ProfileDialog.js";
+import { signOut, onAuthStateChanged } from "firebase/auth";
+import { auth } from "../firebase.js";
+import axios from "axios";
 
 // Mock user data - in real app this would come from authentication context
 const mockUser = {
-  id: '1',
-  name: 'John Doe',
-  email: 'john.doe@example.com',
-  avatar: '',
-  provider: 'github'
+  id: "1",
+  name: "John Doe",
+  email: "john.doe@example.com",
+  avatar: "",
+  provider: "github",
 };
 
 // Mock previous codes data
 const mockPreviousCodes = [
   {
-    id: '1',
-    name: 'React Calculator',
-    lastModified: '2 hours ago',
+    id: "1",
+    name: "React Calculator",
+    lastModified: "2 hours ago",
     collaborators: 3,
-    language: 'JavaScript'
+    language: "JavaScript",
   },
   {
-    id: '2',
-    name: 'Todo App',
-    lastModified: '1 day ago',
+    id: "2",
+    name: "Todo App",
+    lastModified: "1 day ago",
     collaborators: 1,
-    language: 'TypeScript'
+    language: "TypeScript",
   },
   {
-    id: '3',
-    name: 'Weather Dashboard',
-    lastModified: '3 days ago',
+    id: "3",
+    name: "Weather Dashboard",
+    lastModified: "3 days ago",
     collaborators: 2,
-    language: 'React'
+    language: "React",
   },
   {
-    id: '4',
-    name: 'API Integration',
-    lastModified: '1 week ago',
+    id: "4",
+    name: "API Integration",
+    lastModified: "1 week ago",
     collaborators: 4,
-    language: 'Node.js'
-  }
+    language: "Node.js",
+  },
 ];
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const [user, setUser] = useState<any>(null);
+  const [codes, setCodes] = useState<any[]>([]);
+
   const [showJoinDialog, setShowJoinDialog] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        try {
+          const res = await axios.get(
+            `http://localhost:5000/api/user/${firebaseUser.uid}`
+          );
+          setUser(res.data);
+          setCodes(res.data.savedCodes || []);
+        } catch (error) {
+          console.error("Error fetching user info:", error);
+          toast.error("Failed to load user data");
+        }
+      } else {
+        navigate("/");
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const handleCreateRoom = () => {
     const roomId = `room_${Math.random().toString(36).substring(2, 9)}`;
@@ -73,10 +113,15 @@ const Dashboard = () => {
     navigate(`/room/existing_${codeId}`);
   };
 
-  const handleLogout = () => {
-    // In real app, this would handle logout logic
-    toast.success('Logged out successfully');
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      toast.success("Logged out successfully");
+      navigate("/");
+    } catch (err) {
+      console.error("Logout error:", err);
+      toast.error("Logout failed");
+    }
   };
 
   return (
@@ -94,7 +139,7 @@ const Dashboard = () => {
                 Dashboard
               </Badge>
             </div>
-            
+
             <div className="flex items-center space-x-3">
               <Button
                 variant="ghost"
@@ -103,14 +148,17 @@ const Dashboard = () => {
                 className="flex items-center space-x-2"
               >
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={mockUser.avatar} />
+                  <AvatarImage src={user?.avatar} />
                   <AvatarFallback>
-                    {mockUser.name.split(' ').map(n => n[0]).join('')}
+                    {user?.displayName
+                      .split(" ")
+                      .map((n:any) => n[0])
+                      .join("")}
                   </AvatarFallback>
                 </Avatar>
-                <span className="hidden sm:block">{mockUser.name}</span>
+                <span className="hidden sm:block">{user?.displayName}</span>
               </Button>
-              
+
               <Button
                 variant="ghost"
                 size="sm"
@@ -118,12 +166,8 @@ const Dashboard = () => {
               >
                 <Settings className="h-4 w-4" />
               </Button>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleLogout}
-              >
+
+              <Button variant="ghost" size="sm" onClick={handleLogout}>
                 <LogOut className="h-4 w-4" />
               </Button>
             </div>
@@ -138,15 +182,19 @@ const Dashboard = () => {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h2 className="text-3xl font-bold mb-2">
-                Welcome back, {mockUser.name.split(' ')[0]}! 👋
+                Welcome back, {user?.displayName.split(" ")[0]}! 👋
               </h2>
               <p className="text-muted-foreground">
-                Ready to code together? Create a new room or continue working on your projects.
+                Ready to code together? Create a new room or continue working on
+                your projects.
               </p>
             </div>
-            
+
             <div className="flex gap-3">
-              <Button onClick={handleCreateRoom} className="flex items-center gap-2">
+              <Button
+                onClick={handleCreateRoom}
+                className="flex items-center gap-2"
+              >
                 <Plus className="h-4 w-4" />
                 Create Room
               </Button>
@@ -176,8 +224,8 @@ const Dashboard = () => {
             {mockPreviousCodes.length > 0 ? (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {mockPreviousCodes.map((code) => (
-                  <Card 
-                    key={code.id} 
+                  <Card
+                    key={code.id}
                     className="hover:bg-accent/50 transition-colors cursor-pointer"
                     onClick={() => handleOpenCode(code.id, code.name)}
                   >
@@ -208,7 +256,9 @@ const Dashboard = () => {
               <Card className="text-center py-12">
                 <CardContent>
                   <Code className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <h4 className="text-lg font-medium mb-2">No recent projects</h4>
+                  <h4 className="text-lg font-medium mb-2">
+                    No recent projects
+                  </h4>
                   <p className="text-muted-foreground mb-4">
                     Start coding by creating your first collaborative room.
                   </p>
@@ -226,42 +276,56 @@ const Dashboard = () => {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Total Projects</p>
-                    <p className="text-2xl font-bold">{mockPreviousCodes.length}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Total Projects
+                    </p>
+                    <p className="text-2xl font-bold">
+                      {mockPreviousCodes.length}
+                    </p>
                   </div>
                   <Code className="h-8 w-8 text-code-blue" />
                 </div>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Collaborations</p>
+                    <p className="text-sm text-muted-foreground">
+                      Collaborations
+                    </p>
                     <p className="text-2xl font-bold">
-                      {mockPreviousCodes.reduce((acc, code) => acc + code.collaborators, 0)}
+                      {mockPreviousCodes.reduce(
+                        (acc, code) => acc + code.collaborators,
+                        0
+                      )}
                     </p>
                   </div>
                   <Users className="h-8 w-8 text-code-purple" />
                 </div>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Account Type</p>
+                    <p className="text-sm text-muted-foreground">
+                      Account Type
+                    </p>
                     <p className="text-lg font-medium flex items-center gap-2">
                       <Github className="h-4 w-4" />
-                      {mockUser.provider === 'github' ? 'GitHub' : 'Google'}
+                      {mockUser.provider === "github" ? "GitHub" : "Google"}
                     </p>
                   </div>
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={mockUser.avatar} />
                     <AvatarFallback>
-                      {mockUser.name.split(' ').map(n => n[0]).join('')}
+                      {mockUser.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")}
                     </AvatarFallback>
                   </Avatar>
                 </div>
@@ -277,7 +341,7 @@ const Dashboard = () => {
         onOpenChange={setShowJoinDialog}
         onJoinRoom={handleJoinRoom}
       />
-      
+
       <ProfileDialog
         open={showProfileDialog}
         onOpenChange={setShowProfileDialog}

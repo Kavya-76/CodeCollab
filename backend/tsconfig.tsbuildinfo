@@ -1,1 +1,1 @@
-{"root":["./src/db.ts","./src/server.ts","./src/models/user.ts","./src/routes/auth.ts","./src/sockets/roomhandler.ts","./src/utils/savecode.ts","./src/utils/signup.ts"],"version":"5.8.3"}
+{"root":["./src/db.ts","./src/server.ts","./src/models/user.ts","./src/routes/auth.ts","./src/routes/user.ts","./src/sockets/roomhandler.ts","./src/utils/savecode.ts","./src/utils/signup.ts"],"version":"5.8.3"}

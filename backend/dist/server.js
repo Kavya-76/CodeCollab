@@ -14,6 +14,7 @@ import dotenv from "dotenv";
 import { Server } from "socket.io";
 import connectDB from "./db.js";
 import authRoutes from "./routes/auth.js";
+import userRoutes from "./routes/user.js";
 import { handleSocketConnection } from "./sockets/roomHandler.js";
 dotenv.config();
 const app = express();
@@ -30,6 +31,7 @@ io.on("connection", (socket) => {
     handleSocketConnection(io, socket);
 });
 app.use("/api/auth", authRoutes);
+app.use("/api/user", userRoutes);
 app.get("/", (req, res) => {
     res.send("Socket.IO Server is running!");
 });
