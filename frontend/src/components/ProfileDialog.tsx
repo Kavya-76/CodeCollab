@@ -1,52 +1,55 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button.js';
 import { Input } from '@/components/ui/input.js';
 import { Label } from '@/components/ui/label.js';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog.js';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog.js';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.js';
 import { Badge } from '@/components/ui/badge.js';
-import {toast} from "sonner"
+import { toast } from 'sonner';
 import { Upload, Github, Mail, User } from 'lucide-react';
 
-interface User {
-  id: string;
-  name: string;
+interface UserData {
+  uid: string;
+  displayName: string;
   email: string;
-  avatar: string;
+  photoURL: string;
   provider: string;
 }
 
 interface ProfileDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  user: User;
+  user: UserData;
 }
 
 const ProfileDialog: React.FC<ProfileDialogProps> = ({
   open,
   onOpenChange,
-  user
+  user,
 }) => {
-  const [name, setName] = useState(user.name);
-  const [avatar, setAvatar] = useState(user.avatar);
+  const [name, setName] = useState<string>(user.displayName || '');
+  const [avatar, setAvatar] = useState<string>(user.photoURL || '');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!name.trim()) {
-      toast.error("Please enter your name");
+      toast.error('Please enter your name');
       return;
     }
-    
-    // In real app, this would update the user profile
-    toast.success("Profile updated successfully!");
+
+    // Real update logic goes here
+    toast.success('Profile updated successfully!');
     onOpenChange(false);
   };
 
   const handleAvatarUpload = () => {
-    // In real app, this would handle file upload
-    toast.info("Avatar upload functionality would be implemented here");
+    toast.info('Avatar upload functionality would be implemented here');
   };
 
   return (
@@ -55,15 +58,20 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
         <DialogHeader>
           <DialogTitle>Profile Settings</DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-6">
           {/* Avatar Section */}
           <div className="flex flex-col items-center space-y-4">
             <div className="relative">
               <Avatar className="h-20 w-20">
-                <AvatarImage src={avatar} />
+                <AvatarImage src={avatar || undefined} />
                 <AvatarFallback className="text-lg">
-                  {name.split(' ').map(n => n[0]).join('')}
+                  {name
+                    ? name
+                        .split(' ')
+                        .map((n) => n[0])
+                        .join('')
+                    : 'U'}
                 </AvatarFallback>
               </Avatar>
               <Button
@@ -110,7 +118,8 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                Email cannot be changed as it's linked to your {user.provider === 'github' ? 'GitHub' : 'Google'} account
+                Email cannot be changed as it's linked to your{' '}
+                {user.provider === 'github' ? 'GitHub' : 'Google'} account
               </p>
             </div>
 

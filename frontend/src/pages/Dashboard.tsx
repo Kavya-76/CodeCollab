@@ -25,13 +25,31 @@ import { signOut, onAuthStateChanged } from "firebase/auth";
 import { auth } from "../firebase.js";
 import axios from "axios";
 
+interface CodeData {
+  _id?: string;
+  content: string;
+  language: string;
+  savedAt: string;
+}
+
+interface UserData {
+  uid: string;
+  displayName: string;
+  email: string;
+  photoURL: string;
+  provider: string;
+  savedCodes: CodeData[];
+}
+
+
 // Mock user data - in real app this would come from authentication context
 const mockUser = {
-  id: "1",
-  name: "John Doe",
+  uid: "1",
+  displayName: "John Doe",
   email: "john.doe@example.com",
-  avatar: "",
+  photoURL: "",
   provider: "github",
+  savedCodes: []
 };
 
 // Mock previous codes data
@@ -39,9 +57,9 @@ const mockPreviousCodes = [
   {
     id: "1",
     name: "React Calculator",
-    lastModified: "2 hours ago",
-    collaborators: 3,
     language: "JavaScript",
+    content: "",
+    savedAt: "2 hours ago",
   },
   {
     id: "2",
@@ -68,8 +86,9 @@ const mockPreviousCodes = [
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState<any>(null);
-  const [codes, setCodes] = useState<any[]>([]);
+  const [user, setUser] = useState<UserData | null>(null);
+  const [codes, setCodes] = useState<CodeData[]>([]);
+
 
   const [showJoinDialog, setShowJoinDialog] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
@@ -78,9 +97,11 @@ const Dashboard = () => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         try {
+          console.log("sendinng request");
           const res = await axios.get(
             `http://localhost:5000/api/user/${firebaseUser.uid}`
           );
+          console.log(res.data);
           setUser(res.data);
           setCodes(res.data.savedCodes || []);
         } catch (error) {
@@ -132,8 +153,8 @@ const Dashboard = () => {
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-4">
               <h1 className="text-2xl font-bold">
-                <span className="text-code-blue">Collab</span>
-                <span className="text-white">Code</span>
+                <span className="text-code-blue">Code</span>
+                <span className="text-white">Collab</span>
               </h1>
               <Badge variant="secondary" className="hidden sm:flex">
                 Dashboard
@@ -148,11 +169,11 @@ const Dashboard = () => {
                 className="flex items-center space-x-2"
               >
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={user?.avatar} />
+                  <AvatarImage src={user?.photoURL} />
                   <AvatarFallback>
                     {user?.displayName
                       .split(" ")
-                      .map((n:any) => n[0])
+                      .map((n) => n[0])
                       .join("")}
                   </AvatarFallback>
                 </Avatar>
@@ -296,10 +317,11 @@ const Dashboard = () => {
                       Collaborations
                     </p>
                     <p className="text-2xl font-bold">
-                      {mockPreviousCodes.reduce(
+                      0
+                      {/* {mockPreviousCodes.reduce(
                         (acc, code) => acc + code.collaborators,
                         0
-                      )}
+                      )} */}
                     </p>
                   </div>
                   <Users className="h-8 w-8 text-code-purple" />
@@ -316,13 +338,13 @@ const Dashboard = () => {
                     </p>
                     <p className="text-lg font-medium flex items-center gap-2">
                       <Github className="h-4 w-4" />
-                      {mockUser.provider === "github" ? "GitHub" : "Google"}
+                      {user?.provider === "github" ? "GitHub" : "Google"}
                     </p>
                   </div>
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={mockUser.avatar} />
+                    <AvatarImage src={user?.photoURL} />
                     <AvatarFallback>
-                      {mockUser.name
+                      {user?.displayName
                         .split(" ")
                         .map((n) => n[0])
                         .join("")}
@@ -342,11 +364,12 @@ const Dashboard = () => {
         onJoinRoom={handleJoinRoom}
       />
 
+      {user &&                          
       <ProfileDialog
         open={showProfileDialog}
         onOpenChange={setShowProfileDialog}
-        user={mockUser}
-      />
+        user={user}
+      />}
     </div>
   );
 };
