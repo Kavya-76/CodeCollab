@@ -41,7 +41,6 @@ interface UserData {
   savedCodes: CodeData[];
 }
 
-
 // Mock user data - in real app this would come from authentication context
 const mockUser = {
   uid: "1",
@@ -49,7 +48,7 @@ const mockUser = {
   email: "john.doe@example.com",
   photoURL: "",
   provider: "github",
-  savedCodes: []
+  savedCodes: [],
 };
 
 // Mock previous codes data
@@ -89,7 +88,6 @@ const Dashboard = () => {
   const [user, setUser] = useState<UserData | null>(null);
   const [codes, setCodes] = useState<CodeData[]>([]);
 
-
   const [showJoinDialog, setShowJoinDialog] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
 
@@ -97,11 +95,14 @@ const Dashboard = () => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         try {
-          console.log("sendinng request");
-          const res = await axios.get(
-            `http://localhost:5000/api/user/${firebaseUser.uid}`
-          );
-          console.log(res.data);
+          const idToken = await firebaseUser.getIdToken();
+
+          const res = await axios.get("http://localhost:5000/api/user/getInfo", {
+            headers: {
+              Authorization: `Bearer ${idToken}`,
+            },
+          });
+
           setUser(res.data);
           setCodes(res.data.savedCodes || []);
         } catch (error) {
@@ -123,9 +124,13 @@ const Dashboard = () => {
   };
 
   const handleJoinRoom = (roomId: string) => {
+    const username = user?.displayName;
     toast.success(`Joining room ${roomId}!`);
-    navigate(`/room/${roomId}`);
-    setShowJoinDialog(false);
+    navigate(`/room/${roomId}`, {
+      state: {
+        username,
+      },
+    });
   };
 
   const handleOpenCode = (codeId: string, codeName: string) => {
@@ -178,14 +183,6 @@ const Dashboard = () => {
                   </AvatarFallback>
                 </Avatar>
                 <span className="hidden sm:block">{user?.displayName}</span>
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowProfileDialog(true)}
-              >
-                <Settings className="h-4 w-4" />
               </Button>
 
               <Button variant="ghost" size="sm" onClick={handleLogout}>
@@ -364,12 +361,13 @@ const Dashboard = () => {
         onJoinRoom={handleJoinRoom}
       />
 
-      {user &&                          
-      <ProfileDialog
-        open={showProfileDialog}
-        onOpenChange={setShowProfileDialog}
-        user={user}
-      />}
+      {user && (
+        <ProfileDialog
+          open={showProfileDialog}
+          onOpenChange={setShowProfileDialog}
+          user={user}
+        />
+      )}
     </div>
   );
 };

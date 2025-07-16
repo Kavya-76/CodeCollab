@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import JoinSessionForm from "@/components/JoinSessionForm.js";
 import AuthButtons from "@/components/AuthButtons.js";
 import CodeSnippet from "@/components/CodeSnippet.js";
 import { useNavigate } from "react-router-dom";
+import { auth } from "@/firebase.js";
+import { onAuthStateChanged } from "firebase/auth";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -21,7 +23,7 @@ const Index = () => {
       toast.success(`Joining room ${roomId}. Welcome, ${username}!`);
     }
 
-    console.log({ roomId, username, isNewRoom });
+    // console.log({ roomId, username, isNewRoom });
     // Navigate to the room page
     navigate(`/room/${roomId}`, {
       state: {
@@ -37,6 +39,13 @@ const Index = () => {
   const handleBackToAuth = () => {
     setShowGuestForm(false);
   };
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) navigate("/dashboard");
+    });
+    return () => unsubscribe();
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col">
