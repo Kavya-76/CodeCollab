@@ -8,12 +8,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import express from "express";
+import { identifyUser } from "../middleware/identifyUser";
+import { enforceRoomLimit } from "../middleware/roomLimit";
 import { Room } from "../models/Room";
 const router = express.Router();
-router.post("/create", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.post("/create", identifyUser, enforceRoomLimit, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
-        const uid = (_a = req.user) === null || _a === void 0 ? void 0 : _a.userId;
+        const uid = ((_a = req.user) === null || _a === void 0 ? void 0 : _a.uid) || req.userId;
         if (!uid) {
             res.status(400).json({ message: "UID not provided" });
             return;
@@ -35,12 +37,10 @@ router.post("/create", (req, res) => __awaiter(void 0, void 0, void 0, function*
             message: "Room created successfully",
             roomId,
         });
-        return;
     }
     catch (error) {
         console.error("Error creating room:", error);
         res.status(500).json({ message: "Server error." });
-        return;
     }
 }));
 export default router;

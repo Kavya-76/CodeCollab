@@ -1,17 +1,14 @@
-import express, { Request, Response } from "express";
-import { identifyUser} from "../middleware/identifyUser";
+import express, { Response } from "express";
+import { AuthenticatedRequest } from "../types";
+import { identifyUser } from "../middleware/identifyUser";
 import { enforceRoomLimit } from "../middleware/roomLimit";
 import { Room } from "../models/Room";
 
 const router = express.Router();
 
-interface CustomRequest extends Request {
-  user?: { userId: string };
-}
-
-router.post("/create", async (req: CustomRequest, res: Response) => {
+router.post("/create", identifyUser, enforceRoomLimit, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const uid = req.user?.userId;
+    const uid = req.user?.uid || req.userId;
     if (!uid) {
       res.status(400).json({ message: "UID not provided" });
       return;
@@ -37,11 +34,9 @@ router.post("/create", async (req: CustomRequest, res: Response) => {
       message: "Room created successfully",
       roomId,
     });
-    return;
   } catch (error) {
     console.error("Error creating room:", error);
     res.status(500).json({ message: "Server error." });
-    return;
   }
 });
 

@@ -12,32 +12,43 @@ import { User } from "../models/User";
 const GUEST_ROOM_LIMIT = 1;
 const AUTH_ROOM_LIMIT = 5;
 export const enforceRoomLimit = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    const { userType, userId, ipAddress } = req;
+    const typedReq = req;
+    const { userType, userId, ipAddress } = typedReq;
     try {
         if (userType === "authenticated") {
-            if (!userId)
-                return res.status(400).json({ message: "UID not provided" });
-            // Fetch MongoDB user by Firebase UID (assumes UID is used as _id or linked field)
+            if (!userId) {
+                res.status(400).json({ message: "UID not provided" });
+                return;
+            }
             const user = yield User.findOne({ firebaseUid: userId }).populate("rooms");
-            if (!user)
-                return res.status(404).json({ message: "User not found" });
+            if (!user) {
+                res.status(404).json({ message: "User not found" });
+                return;
+            }
             const activeRooms = user.rooms.filter((room) => room.isActive);
             if (activeRooms.length >= AUTH_ROOM_LIMIT) {
-                return res.status(403).json({ message: "You have reached the room limit (5)." });
+                res.status(403).json({ message: "You have reached the room limit (5)." });
+                return;
             }
         }
         else if (userType === "guest") {
-            if (!ipAddress)
-                return res.status(400).json({ message: "IP address not available" });
-            const guestRooms = yield Room.find({ createdByIp: ipAddress, isGuest: true });
+            if (!ipAddress) {
+                res.status(400).json({ message: "IP address not available" });
+                return;
+            }
+            const guestRooms = yield Room.find({
+                createdByIp: ipAddress,
+                isGuest: true,
+            });
             if (guestRooms.length >= GUEST_ROOM_LIMIT) {
-                return res.status(403).json({ message: "Guests can only create 1 room." });
+                res.status(403).json({ message: "Guests can only create 1 room." });
+                return;
             }
         }
         next();
     }
     catch (err) {
         console.error("Room limit check failed:", err);
-        return res.status(500).json({ message: "Room limit check failed", error: err });
+        res.status(500).json({ message: "Room limit check failed", error: err });
     }
 });

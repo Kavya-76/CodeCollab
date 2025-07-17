@@ -1,12 +1,13 @@
 export const identifyUser = (req, res, next) => {
-    const user = req.user; // From auth middleware (JWT or session)
-    if (user && user.uid) {
-        req.userType = "authenticated";
-        req.userId = user.uid;
+    const typedReq = req;
+    const user = typedReq.user;
+    if (user === null || user === void 0 ? void 0 : user.uid) {
+        typedReq.userType = "authenticated";
+        typedReq.userId = user.uid;
     }
     else {
-        req.userType = "guest";
-        req.ipAddress = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+        typedReq.userType = "guest";
+        typedReq.ipAddress = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
     }
     next();
 };
