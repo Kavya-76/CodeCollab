@@ -1,8 +1,8 @@
 import express, { Response } from "express";
 import { AuthenticatedRequest } from "../types";
-import { identifyUser } from "../middleware/identifyUser";
-import { enforceRoomLimit } from "../middleware/roomLimit";
-import { Room } from "../models/Room";
+import { identifyUser } from "../middleware/identifyUser.js";
+import { enforceRoomLimit } from "../middleware/roomLimit.js";
+import { Room } from "../models/Room.js";
 
 const router = express.Router();
 
@@ -19,12 +19,6 @@ router.post("/create", identifyUser, enforceRoomLimit, async (req: Authenticated
     const newRoom = new Room({
       roomId,
       adminId: uid,
-      members: [
-        {
-          uid,
-          joinedAt: new Date(),
-        },
-      ],
       createdAt: new Date(),
     });
 

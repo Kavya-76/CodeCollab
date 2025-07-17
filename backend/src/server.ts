@@ -30,7 +30,7 @@ io.on("connection", (socket) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
-app.use("/api/rooms", roomRoutes);
+app.use("/api/room", roomRoutes);
 app.get("/", (req, res) => {
   res.send("Socket.IO Server is running!");
 });

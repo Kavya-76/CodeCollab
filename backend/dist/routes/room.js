@@ -8,9 +8,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import express from "express";
-import { identifyUser } from "../middleware/identifyUser";
-import { enforceRoomLimit } from "../middleware/roomLimit";
-import { Room } from "../models/Room";
+import { identifyUser } from "../middleware/identifyUser.js";
+import { enforceRoomLimit } from "../middleware/roomLimit.js";
+import { Room } from "../models/Room.js";
 const router = express.Router();
 router.post("/create", identifyUser, enforceRoomLimit, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
@@ -24,12 +24,6 @@ router.post("/create", identifyUser, enforceRoomLimit, (req, res) => __awaiter(v
         const newRoom = new Room({
             roomId,
             adminId: uid,
-            members: [
-                {
-                    uid,
-                    joinedAt: new Date(),
-                },
-            ],
             createdAt: new Date(),
         });
         yield newRoom.save();

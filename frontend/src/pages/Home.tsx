@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import JoinSessionForm from "@/components/JoinSessionForm.js";
+import GuestRoomHandling from "@/components/GuestRoomHandling.js";
 import AuthButtons from "@/components/AuthButtons.js";
 import CodeSnippet from "@/components/CodeSnippet.js";
 import { useNavigate } from "react-router-dom";
@@ -23,8 +23,6 @@ const Index = () => {
       toast.success(`Joining room ${roomId}. Welcome, ${username}!`);
     }
 
-    // console.log({ roomId, username, isNewRoom });
-    // Navigate to the room page
     navigate(`/room/${roomId}`, {
       state: {
         username,
@@ -79,7 +77,7 @@ const Index = () => {
               {!showGuestForm ? (
                 <AuthButtons onUserContinue={handleUserContinue} />
               ) : (
-                <JoinSessionForm
+                <GuestRoomHandling
                   onSubmit={handleJoinSession}
                   onBack={handleBackToAuth}
                   isGuestMode={true}

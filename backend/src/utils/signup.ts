@@ -2,8 +2,8 @@ import { User } from "../models/User.js";
 
 interface FirebaseUserInfo {
   uid: string;
-  displayName: string | null;
-  email: string | null;
+  displayName: string;
+  email: string;
   photoURL: string | null;
   provider: string;
 }

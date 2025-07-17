@@ -24,6 +24,7 @@ import ProfileDialog from "@/components/ProfileDialog.js";
 import { signOut, onAuthStateChanged } from "firebase/auth";
 import { auth } from "../firebase.js";
 import axios from "axios";
+import { createRoom } from "@/utils/createRoom.js";
 
 interface CodeData {
   _id?: string;
@@ -117,10 +118,15 @@ const Dashboard = () => {
     return () => unsubscribe();
   }, []);
 
-  const handleCreateRoom = () => {
-    const roomId = `room_${Math.random().toString(36).substring(2, 9)}`;
+  const handleCreateRoom = async () => {
+    const username = user?.displayName;
+    const roomId = await createRoom();
     toast.success(`Created new room ${roomId}!`);
-    navigate(`/room/${roomId}`);
+    navigate(`/room/${roomId}`, {
+      state: {
+        username,
+      },
+    });
   };
 
   const handleJoinRoom = (roomId: string) => {

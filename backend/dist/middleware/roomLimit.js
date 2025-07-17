@@ -7,43 +7,25 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { Room } from "../models/Room";
-import { User } from "../models/User";
+import { Room } from "../models/Room.js";
 const GUEST_ROOM_LIMIT = 1;
 const AUTH_ROOM_LIMIT = 5;
 export const enforceRoomLimit = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    const typedReq = req;
-    const { userType, userId, ipAddress } = typedReq;
+    const { userType, userId } = req;
+    if (!userId) {
+        res.status(400).json({ message: "User ID not provided" });
+        return;
+    }
     try {
-        if (userType === "authenticated") {
-            if (!userId) {
-                res.status(400).json({ message: "UID not provided" });
-                return;
-            }
-            const user = yield User.findOne({ firebaseUid: userId }).populate("rooms");
-            if (!user) {
-                res.status(404).json({ message: "User not found" });
-                return;
-            }
-            const activeRooms = user.rooms.filter((room) => room.isActive);
-            if (activeRooms.length >= AUTH_ROOM_LIMIT) {
-                res.status(403).json({ message: "You have reached the room limit (5)." });
-                return;
-            }
-        }
-        else if (userType === "guest") {
-            if (!ipAddress) {
-                res.status(400).json({ message: "IP address not available" });
-                return;
-            }
-            const guestRooms = yield Room.find({
-                createdByIp: ipAddress,
-                isGuest: true,
-            });
-            if (guestRooms.length >= GUEST_ROOM_LIMIT) {
-                res.status(403).json({ message: "Guests can only create 1 room." });
-                return;
-            }
+        // Count rooms where this user is the admin (i.e., created them)
+        const roomCount = yield Room.countDocuments({ adminId: userId });
+        if ((userType === "authenticated" && roomCount >= AUTH_ROOM_LIMIT) ||
+            (userType === "guest" && roomCount >= GUEST_ROOM_LIMIT)) {
+            const message = userType === "authenticated"
+                ? "You have reached the room limit (5)."
+                : "Guests can only create 1 room.";
+            res.status(403).json({ message });
+            return;
         }
         next();
     }
