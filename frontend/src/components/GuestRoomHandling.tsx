@@ -11,9 +11,10 @@ import {
 import { toast } from "sonner";
 import { UserRound, KeyRound, ArrowLeft } from "lucide-react";
 import { createRoom } from "@/utils/createRoom.js";
+import {v4 as uuidv4} from "uuid"
 
 interface GuestRoomHandlingProps {
-  onSubmit: (roomId: string, username: string, isNewRoom: boolean) => void;
+  onSubmit: (roomId: string, userId: string, username: string, isNewRoom: boolean) => void;
   onBack?: () => void;
   isGuestMode?: boolean;
 }
@@ -41,17 +42,25 @@ const GuestRoomHandling: React.FC<GuestRoomHandlingProps> = ({
     }
 
     let finalRoomId = roomId;
-
+    let userId = localStorage.getItem("userId") || "";
+    if (!userId) {
+      userId = uuidv4();
+      localStorage.setItem("userId", userId);
+    }
+    
     if (isNewRoom) {
       try {
-        finalRoomId = await createRoom();
+        const { userId: createdUserId, roomId: createdRoomId } =
+          await createRoom();
+        userId = createdUserId;
+        finalRoomId = createdRoomId;
       } catch (err) {
         toast.error("Failed to create room");
         return;
       }
     }
 
-    onSubmit(finalRoomId, username, isNewRoom);
+    onSubmit(finalRoomId, userId, username, isNewRoom);
   };
 
   return (

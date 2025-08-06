@@ -120,21 +120,25 @@ const Dashboard = () => {
 
   const handleCreateRoom = async () => {
     const username = user?.displayName;
-    const roomId = await createRoom();
+    const {userId, roomId} = await createRoom();
     toast.success(`Created new room ${roomId}!`);
     navigate(`/room/${roomId}`, {
       state: {
+        userId,
         username,
+        isGuest: false
       },
     });
   };
 
   const handleJoinRoom = (roomId: string) => {
     const username = user?.displayName;
+    const userId = user?.uid;
     toast.success(`Joining room ${roomId}!`);
     navigate(`/room/${roomId}`, {
       state: {
         username,
+        userId
       },
     });
   };

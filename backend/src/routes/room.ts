@@ -23,10 +23,10 @@ router.post("/create", identifyUser, enforceRoomLimit, async (req: Authenticated
     });
 
     await newRoom.save();
-
     res.status(200).json({
       message: "Room created successfully",
       roomId,
+      uid
     });
   } catch (error) {
     console.error("Error creating room:", error);

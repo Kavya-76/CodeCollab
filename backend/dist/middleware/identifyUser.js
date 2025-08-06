@@ -9,16 +9,15 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 import admin from "../firebase/firebaseAdmin.js";
 export const identifyUser = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
     const authHeader = req.headers.authorization;
     if (authHeader === null || authHeader === void 0 ? void 0 : authHeader.startsWith("Bearer ")) {
         const token = authHeader.split(" ")[1];
-        console.log("Authenticated user");
         try {
             const decodedToken = yield admin.auth().verifyIdToken(token);
             req.user = decodedToken;
             req.userType = "authenticated";
             req.userId = decodedToken.uid;
+            console.log("Authenticated user: ", req.userId);
             return next();
         }
         catch (error) {
@@ -27,11 +26,13 @@ export const identifyUser = (req, res, next) => __awaiter(void 0, void 0, void 0
             return;
         }
     }
-    console.log("guest user");
-    const ip = ((_a = req.headers["x-forwarded-for"]) === null || _a === void 0 ? void 0 : _a.split(",")[0]) ||
-        req.socket.remoteAddress ||
-        "";
+    const guestId = req.headers["x-guest-id"];
+    if (typeof guestId !== "string" || !guestId) {
+        res.status(400).json({ message: "Missing guest identifier" });
+        return;
+    }
     req.userType = "guest";
-    req.userId = ip;
+    req.userId = guestId;
+    console.log("Guest user:", guestId);
     next();
 });

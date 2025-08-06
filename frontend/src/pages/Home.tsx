@@ -13,6 +13,7 @@ const Index = () => {
 
   const handleJoinSession = (
     roomId: string,
+    userId: string,
     username: string,
     isNewRoom: boolean
   ) => {
@@ -25,7 +26,9 @@ const Index = () => {
 
     navigate(`/room/${roomId}`, {
       state: {
+        userId,
         username,
+        isGuest: true,
       },
     });
   };

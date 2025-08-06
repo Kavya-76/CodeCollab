@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import CodeEditor from "@/components/CodeEditor.js";
 import UsersList from "@/components/UserList.js";
@@ -18,7 +18,9 @@ const Room = () => {
   const location = useLocation();
 
   const { roomId } = useParams();
+  const userId = location.state?.userId;
   const username = location.state?.username;
+  const isGuest = location.state?.isGuest;
 
   const [code, setCode] = useState("// Start coding here...");
   const [output, setOutput] = useState("");
@@ -30,19 +32,17 @@ const Room = () => {
 
   // no username found
   useEffect(() => {
-    console.log("No user detected");
-    
-    if (!username) navigate("/");
-  }, [username]);
+    if (!userId) {
+      navigate("/");
+    }
+  }, [userId, navigate]);
 
   // to handle the user join event
   useEffect(() => {
-    if (!username || !roomId) return;
-
-    socket.emit("join-room", { roomId, username });
+    if (!userId || !roomId) return;
+    socket.emit("join-room", { roomId, userId, username, isGuest });
 
     socket.on("user-list", (usersPresent) => {
-      console.log(usersPresent);
       setUsers(usersPresent);
     });
 
@@ -81,22 +81,44 @@ const Room = () => {
       const isActive = !document.hidden;
       socket.emit("user-activity", {
         roomId,
-        userId: socket.id,
+        userId,
         isActive,
       });
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
-
     handleVisibilityChange();
 
-    // automatically leaves the room if page is refreshed or closed
-    return () => {
-      socket.emit("leave-room", { roomId, username });
-
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    const handleUnload = () => {
+      socket.emit("leave-room", { roomId, userId });
     };
-  }, [roomId, username]);
+    window.addEventListener("beforeunload", handleUnload);
+
+
+    return () => {
+      socket.emit("leave-room", { roomId, userId });
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("beforeunload", handleUnload);
+
+      socket.off("user-list");
+      socket.off("user-joined");
+      socket.off("user-left");
+      socket.off("code-change");
+      socket.off("output-result");
+      socket.off("language-change");
+      socket.off("execution-locked");
+      socket.off("execution-unlocked");
+    };
+  }, [roomId, userId]);
+
+  const headers = useMemo(
+    () => ({
+      "Content-Type": "application/json",
+      "X-RapidAPI-Key": import.meta.env.VITE_XRapidAPIKey,
+      "X-RapidAPI-Host": "judge0-ce.p.rapidapi.com",
+    }),
+    []
+  );
 
   const handleRun = async () => {
     if (!roomId || !username) return;
@@ -107,12 +129,6 @@ const Room = () => {
     setOutput("");
 
     const encodedCode = btoa(code);
-
-    const headers = {
-      "Content-Type": "application/json",
-      "X-RapidAPI-Key": import.meta.env.VITE_XRapidAPIKey, // use same key for both
-      "X-RapidAPI-Host": "judge0-ce.p.rapidapi.com",
-    };
 
     try {
       const submissionRes = await fetch(
@@ -186,6 +202,14 @@ const Room = () => {
     setSidebarCollapsed(sizes[0] < 10);
   };
 
+  const handleLeaveRoom = () => {
+    socket.emit("leave-room", {
+      roomId,
+    });
+
+    navigate("/dashboard");
+  };
+
   return (
     <div className="min-h-screen flex w-full">
       <ResizablePanelGroup
@@ -232,6 +256,7 @@ const Room = () => {
                     <Play className="mr-1 h-4 w-4" />
                     {isExecuting ? "Running..." : "Run"}
                   </Button>
+                  <Button onClick={handleLeaveRoom}>Leave Room</Button>
                 </div>
               </div>
             </header>

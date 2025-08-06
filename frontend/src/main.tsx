@@ -8,11 +8,11 @@ const rootElement = document.getElementById('root');
 
 if (rootElement) {
   createRoot(rootElement).render(
-    <StrictMode>
+    // <StrictMode>
       <FirebaseProvider>
         <App />
       </FirebaseProvider>
-    </StrictMode>
+    // </StrictMode>
   );
 } else {
   throw new Error('Root element not found');

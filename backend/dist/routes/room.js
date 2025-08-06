@@ -30,6 +30,7 @@ router.post("/create", identifyUser, enforceRoomLimit, (req, res) => __awaiter(v
         res.status(200).json({
             message: "Room created successfully",
             roomId,
+            uid
         });
     }
     catch (error) {

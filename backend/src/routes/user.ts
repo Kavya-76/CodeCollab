@@ -12,7 +12,6 @@ const router = express.Router();
 router.get(
   "/getInfo", verifyFirebaseToken,
   async (req: AuthenticatedRequest, res: Response) => {
-    console.log(req.user);
     const uid = req.user?.uid;
 
     if (!uid) {

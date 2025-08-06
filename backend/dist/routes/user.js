@@ -13,7 +13,6 @@ import verifyFirebaseToken from "../middleware/verifyFirebaseToken.js";
 const router = express.Router();
 router.get("/getInfo", verifyFirebaseToken, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
-    console.log(req.user);
     const uid = (_a = req.user) === null || _a === void 0 ? void 0 : _a.uid;
     if (!uid) {
         res.status(400).json({ message: "UID is required" });

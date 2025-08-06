@@ -11,12 +11,12 @@ export const identifyUser: RequestHandler = async (
 
   if (authHeader?.startsWith("Bearer ")) {
     const token = authHeader.split(" ")[1];
-    console.log("Authenticated user");
     try {
       const decodedToken = await admin.auth().verifyIdToken(token);
       req.user = decodedToken;
       req.userType = "authenticated";
       req.userId = decodedToken.uid;
+      console.log("Authenticated user: ",req.userId);
       return next();
     } catch (error) {
       console.error("Token verification failed:", error);
@@ -24,14 +24,16 @@ export const identifyUser: RequestHandler = async (
       return;
     }
   }
-  console.log("guest user");
-  const ip =
-    (req.headers["x-forwarded-for"] as string)?.split(",")[0] ||
-    req.socket.remoteAddress ||
-    "";
+  const guestId = req.headers["x-guest-id"];
+  if (typeof guestId !== "string" || !guestId) {
+    res.status(400).json({ message: "Missing guest identifier" });
+    return;
+  }
 
   req.userType = "guest";
-  req.userId = ip;
+  req.userId = guestId;
+
+  console.log("Guest user:", guestId);
 
   next();
 };
