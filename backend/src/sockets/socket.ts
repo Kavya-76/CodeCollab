@@ -12,6 +12,7 @@ interface User {
   id: string; // socketId
   username: string;
   userId?: string;
+  avatar?: string;
   isActive?: boolean;
   isGuest?: boolean;
   joinedAt: Date;
@@ -21,6 +22,7 @@ type RoomState = {
   code: string; // code in the room
   language?: string;
   languageId?: string;
+  input?: string;
   output?: string;
 };
 
@@ -41,7 +43,7 @@ const pendingRemovals = new Map();
 export const handleSocketConnection = (io: Server, socket: CustomSocket) => {
   console.log("Socket connected:", socket.id);
 
-  socket.on("join-room", ({ roomId, userId, username, isGuest }) => {
+  socket.on("join-room", ({ roomId, userId, username, isGuest, avatar }) => {
     if (!roomId || !userId || !username) {
       socket.emit("room-error", "Missing required parameters");
       return;
@@ -98,6 +100,7 @@ export const handleSocketConnection = (io: Server, socket: CustomSocket) => {
       id: socket.id,
       userId,
       username,
+      avatar,
       isGuest,
       joinedAt: new Date(),
     };
@@ -193,6 +196,22 @@ export const handleSocketConnection = (io: Server, socket: CustomSocket) => {
       users: new Map(),
     };
     room.state.code = code;
+    roomsData.set(roomId, room);
+  });
+
+  socket.on("input-change", ({ roomId, input }) => {
+    socket.to(roomId).emit("input-change", input);
+    const room = roomsData.get(roomId) || {
+      state: {
+        code: "",
+        language: "",
+        languageId: "",
+        input: "",
+        output: "",
+      },
+      users: new Map(),
+    };
+    room.state.input = input;
     roomsData.set(roomId, room);
   });
 

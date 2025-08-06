@@ -7,7 +7,7 @@ const userActiveRooms = new Map();
 const pendingRemovals = new Map();
 export const handleSocketConnection = (io, socket) => {
     console.log("Socket connected:", socket.id);
-    socket.on("join-room", ({ roomId, userId, username, isGuest }) => {
+    socket.on("join-room", ({ roomId, userId, username, isGuest, avatar }) => {
         if (!roomId || !userId || !username) {
             socket.emit("room-error", "Missing required parameters");
             return;
@@ -50,6 +50,7 @@ export const handleSocketConnection = (io, socket) => {
             id: socket.id,
             userId,
             username,
+            avatar,
             isGuest,
             joinedAt: new Date(),
         };
@@ -134,6 +135,21 @@ export const handleSocketConnection = (io, socket) => {
             users: new Map(),
         };
         room.state.code = code;
+        roomsData.set(roomId, room);
+    });
+    socket.on("input-change", ({ roomId, input }) => {
+        socket.to(roomId).emit("input-change", input);
+        const room = roomsData.get(roomId) || {
+            state: {
+                code: "",
+                language: "",
+                languageId: "",
+                input: "",
+                output: "",
+            },
+            users: new Map(),
+        };
+        room.state.input = input;
         roomsData.set(roomId, room);
     });
     socket.on("output-result", ({ roomId, output }) => {

@@ -126,7 +126,8 @@ const Dashboard = () => {
       state: {
         userId,
         username,
-        isGuest: false
+        isGuest: false,
+        avatar: user?.photoURL
       },
     });
   };

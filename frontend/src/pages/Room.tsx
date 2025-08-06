@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
+import OutputPanel from "@/components/OutputPanel.js";
 import CodeEditor from "@/components/CodeEditor.js";
-import UsersList from "@/components/UserList.js";
+import UsersSidebar from "@/components/UsersSidebar.js";
+import { Play, LogOut, Menu, X, ChevronRight } from "lucide-react";
 import LanguageSelector from "@/components/LanguageSelector.js";
 import { Button } from "@/components/ui/button.js";
-import { Play } from "lucide-react";
 import { toast } from "sonner";
 import {
   ResizablePanelGroup,
@@ -12,6 +13,16 @@ import {
   ResizableHandle,
 } from "@/components/ui/resizable.js";
 import socket from "@/utils/socket.js";
+
+interface User {
+  id: string; // socketId
+  username: string;
+  userId?: string;
+  avatar?: string;
+  isActive?: boolean;
+  isGuest?: boolean;
+  joinedAt: Date;
+}
 
 const Room = () => {
   const navigate = useNavigate();
@@ -21,14 +32,19 @@ const Room = () => {
   const userId = location.state?.userId;
   const username = location.state?.username;
   const isGuest = location.state?.isGuest;
+  const avatar = location.state?.avatar;
 
   const [code, setCode] = useState("// Start coding here...");
+  const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
-  const [isExecuting, setIsExecuting] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [users, setUsers] = useState([]);
   const [language, setLanguage] = useState("javascript");
   const [languageId, setLanguageId] = useState(63);
+
+  const [users, setUsers] = useState([]);
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarMinimized, setSidebarMinimized] = useState(false);
+  const [outputCollapsed, setOutputCollapsed] = useState(false);
 
   // no username found
   useEffect(() => {
@@ -40,7 +56,7 @@ const Room = () => {
   // to handle the user join event
   useEffect(() => {
     if (!userId || !roomId) return;
-    socket.emit("join-room", { roomId, userId, username, isGuest });
+    socket.emit("join-room", { roomId, userId, username, avatar, isGuest });
 
     socket.on("user-list", (usersPresent) => {
       setUsers(usersPresent);
@@ -56,6 +72,10 @@ const Room = () => {
 
     socket.on("code-change", (newCode) => {
       setCode(newCode);
+    });
+
+    socket.on("input-change", (newInput) => {
+      setInput(newInput);
     });
 
     socket.on("output-result", (result) => {
@@ -94,7 +114,6 @@ const Room = () => {
     };
     window.addEventListener("beforeunload", handleUnload);
 
-
     return () => {
       socket.emit("leave-room", { roomId, userId });
       document.removeEventListener("visibilitychange", handleVisibilityChange);
@@ -104,6 +123,7 @@ const Room = () => {
       socket.off("user-joined");
       socket.off("user-left");
       socket.off("code-change");
+      socket.off("input-change");
       socket.off("output-result");
       socket.off("language-change");
       socket.off("execution-locked");
@@ -139,7 +159,7 @@ const Room = () => {
           body: JSON.stringify({
             source_code: encodedCode,
             language_id: languageId,
-            stdin: btoa(""), // or pass actual input
+            stdin: btoa(input), // or pass actual input
           }),
         }
       );
@@ -197,9 +217,25 @@ const Room = () => {
     toast(`Language changed to ${newLanguage}`);
   };
 
+  const toggleSidebar = () => {
+    if (sidebarCollapsed) {
+      // From collapsed to expanded
+      setSidebarCollapsed(false);
+      setSidebarMinimized(false);
+    } else if (!sidebarMinimized) {
+      // From expanded to minimized
+      setSidebarMinimized(true);
+    } else {
+      // From minimized to collapsed
+      setSidebarCollapsed(true);
+    }
+  };
+
   // Handle sidebar collapse
-  const handleSidebarResize = (sizes: number[]) => {
-    setSidebarCollapsed(sizes[0] < 10);
+  const handlePanelResize = (sizes: number[]) => {
+    // Auto-collapse output panel when it gets too small (less than 15% of total height)
+    const outputPanelSize = sizes[1];
+    setOutputCollapsed(outputPanelSize < 15);
   };
 
   const handleLeaveRoom = () => {
@@ -211,92 +247,126 @@ const Room = () => {
   };
 
   return (
-    <div className="min-h-screen flex w-full">
-      <ResizablePanelGroup
-        direction="horizontal"
-        className="w-full"
-        onLayout={handleSidebarResize}
-      >
-        {/* Users Sidebar */}
-        <ResizablePanel
-          defaultSize={15}
-          // minSize={5}
-          maxSize={30}
-          className="bg-secondary"
-        >
-          <UsersList users={users} isCollapsed={sidebarCollapsed} />
-        </ResizablePanel>
-
-        <ResizableHandle withHandle />
-
-        {/* Main Content Area */}
-        <ResizablePanel defaultSize={85}>
-          <div className="h-full flex flex-col">
-            {/* Header */}
-            <header className="py-4 px-4 border-b border-border">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-4">
-                  <h1
-                    className="text-xl font-bold cursor-pointer"
-                    onClick={() => navigate("/")}
-                  >
-                    <span className="text-code-blue">Code</span>
-                    <span className="text-white">Collab</span>
-                  </h1>
-                  <div className="bg-secondary px-3 py-1 rounded-full text-sm">
-                    Room: {roomId}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <LanguageSelector
-                    currentLanguage={language}
-                    onLanguageChange={handleLanguageChange}
-                  />
-                  <Button onClick={handleRun} disabled={isExecuting}>
-                    <Play className="mr-1 h-4 w-4" />
-                    {isExecuting ? "Running..." : "Run"}
-                  </Button>
-                  <Button onClick={handleLeaveRoom}>Leave Room</Button>
-                </div>
+    <div className="min-h-screen bg-background">
+      {/* Top Navbar - Sticky */}
+      <header className="sticky top-0 z-50 h-16 bg-card/95 backdrop-blur-sm border-b border-border">
+        <div className="flex items-center justify-between h-full px-4">
+          {/* Left section with room info */}
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleSidebar}
+              className="lg:hidden"
+            >
+              {sidebarCollapsed ? (
+                <Menu className="h-4 w-4" />
+              ) : (
+                <X className="h-4 w-4" />
+              )}
+            </Button>
+            <div className="flex items-center gap-3">
+              <h1 className="text-lg font-semibold">
+                <span className="text-code-blue">Collab</span>
+                <span className="text-foreground">Code</span>
+              </h1>
+              <div className="hidden sm:block bg-muted px-3 py-1.5 rounded-full text-sm font-medium">
+                Room: <span className="text-primary">{roomId}</span>
               </div>
-            </header>
-
-            {/* Editor and Output */}
-            <div className="flex-1 p-4">
-              <ResizablePanelGroup
-                direction="vertical"
-                className="min-h-[calc(100vh-7rem)]"
-              >
-                <ResizablePanel defaultSize={70} minSize={30}>
-                  <div className="h-full bg-secondary rounded-md border border-border">
-                    <CodeEditor
-                      language={language}
-                      value={code}
-                      onChange={(newCode) => {
-                        setCode(newCode);
-                        socket.emit("code-change", { roomId, code: newCode });
-                      }}
-                    />
-                  </div>
-                </ResizablePanel>
-                <ResizableHandle withHandle />
-                <ResizablePanel defaultSize={30} minSize={5} className="mt-2">
-                  <div className="h-full bg-secondary rounded-md border border-border overflow-auto ">
-                    <div className="h-8.5 border-b-blue-950 border-2 flex items-center">
-                      <h2 className="font-bold text-muted-foreground ml-2">
-                        Output
-                      </h2>
-                    </div>
-                    <pre className="text-sm font-mono">
-                      {output || "Run your code to see output here..."}
-                    </pre>
-                  </div>
-                </ResizablePanel>
-              </ResizablePanelGroup>
             </div>
           </div>
-        </ResizablePanel>
-      </ResizablePanelGroup>
+
+          {/* Right section with controls */}
+          <div className="flex items-center gap-3">
+            <LanguageSelector
+              currentLanguage={language}
+              onLanguageChange={handleLanguageChange}
+            />
+            <Button
+              onClick={handleRun}
+              disabled={isExecuting}
+              className="gap-2"
+            >
+              <Play className="h-4 w-4" />
+              {isExecuting ? "Running..." : "Run Code"}
+            </Button>
+            <Button
+              onClick={handleLeaveRoom}
+              variant="outline"
+              className="gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              Leave Room
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Layout */}
+      <div className="flex h-[calc(100vh-4rem)]">
+        {/* Sidebar - only show when not collapsed */}
+        {!sidebarCollapsed && (
+          <UsersSidebar
+            currentUserId={userId}
+            users={users}
+            collapsed={sidebarCollapsed}
+            minimized={sidebarMinimized}
+            onToggle={toggleSidebar}
+          />
+        )}
+
+        {/* Floating toggle button when sidebar is collapsed */}
+        {sidebarCollapsed && (
+          <div className="fixed top-20 left-4 z-50">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleSidebar}
+              className="bg-card border border-border shadow-lg"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+
+        {/* Main Content Area */}
+        <main className="flex-1 flex flex-col">
+          <ResizablePanelGroup
+            direction="vertical"
+            className="h-full"
+            onLayout={handlePanelResize}
+          >
+            {/* Code Editor */}
+            <ResizablePanel defaultSize={60} minSize={30}>
+              <div className="h-full border-r border-border">
+                <CodeEditor
+                  language={language}
+                  value={code}
+                  onChange={(newCode) => {
+                    setCode(newCode);
+                    socket.emit("code-change", { roomId, code: newCode });
+                  }}
+                />
+              </div>
+            </ResizablePanel>
+
+            <ResizableHandle withHandle />
+
+            {/* Output Panel with Tabs */}
+            <ResizablePanel defaultSize={40} minSize={10}>
+              <OutputPanel
+                output={output}
+                input={input}
+                onInputChange={(newInput) => {
+                    setInput(newInput);
+                    socket.emit("input-change", { roomId, input: newInput });
+                  }}
+                isCollapsed={outputCollapsed}
+              />
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        </main>
+      </div>
     </div>
   );
 };
