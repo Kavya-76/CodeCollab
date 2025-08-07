@@ -42,16 +42,6 @@ interface UserData {
   savedCodes: CodeData[];
 }
 
-// Mock user data - in real app this would come from authentication context
-const mockUser = {
-  uid: "1",
-  displayName: "John Doe",
-  email: "john.doe@example.com",
-  photoURL: "",
-  provider: "github",
-  savedCodes: [],
-};
-
 // Mock previous codes data
 const mockPreviousCodes = [
   {
@@ -116,7 +106,7 @@ const Dashboard = () => {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [user]);
 
   const handleCreateRoom = async () => {
     const username = user?.displayName;

@@ -1,17 +1,19 @@
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button.js';
-import { Input } from '@/components/ui/input.js';
-import { Label } from '@/components/ui/label.js';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button.js";
+import { Input } from "@/components/ui/input.js";
+import { Label } from "@/components/ui/label.js";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog.js';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.js';
-import { Badge } from '@/components/ui/badge.js';
-import { toast } from 'sonner';
-import { Upload, Github, Mail, User } from 'lucide-react';
+} from "@/components/ui/dialog.js";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar.js";
+import { Badge } from "@/components/ui/badge.js";
+import { toast } from "sonner";
+import { Upload, Github, Mail, User } from "lucide-react";
+import axios from "axios";
+import { auth } from "@/firebase.js";
 
 interface UserData {
   uid: string;
@@ -32,24 +34,41 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
   onOpenChange,
   user,
 }) => {
-  const [name, setName] = useState<string>(user.displayName || '');
-  const [avatar, setAvatar] = useState<string>(user.photoURL || '');
+  const [name, setName] = useState<string>(user.displayName || "");
+  const [avatar, setAvatar] = useState<string>(user.photoURL || "");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!name.trim()) {
-      toast.error('Please enter your name');
+      toast.error("Please enter your name");
       return;
     }
 
-    // Real update logic goes here
-    toast.success('Profile updated successfully!');
-    onOpenChange(false);
-  };
+    const firebaseUser = auth.currentUser;
+    if (!firebaseUser) {
+      toast.error("User not authenticated");
+      return;
+    }
 
-  const handleAvatarUpload = () => {
-    toast.info('Avatar upload functionality would be implemented here');
+    try {
+      const idToken = await firebaseUser.getIdToken();
+
+      await axios.put(
+        "http://localhost:5000/api/user/updateDisplayName",
+        { displayName: name },
+        {
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+          },
+        }
+      );
+      setName(name);
+      toast.success("Profile updated successfully!");
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Error updating user info:", error);
+      toast.error("Failed to update user data");
+    }
   };
 
   return (
@@ -68,24 +87,16 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                 <AvatarFallback className="text-lg">
                   {name
                     ? name
-                        .split(' ')
+                        .split(" ")
                         .map((n) => n[0])
-                        .join('')
-                    : 'U'}
+                        .join("")
+                    : "U"}
                 </AvatarFallback>
               </Avatar>
-              <Button
-                size="sm"
-                variant="outline"
-                className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full p-0"
-                onClick={handleAvatarUpload}
-              >
-                <Upload className="h-3 w-3" />
-              </Button>
             </div>
             <Badge variant="secondary" className="flex items-center gap-1">
               <Github className="h-3 w-3" />
-              Connected via {user.provider === 'github' ? 'GitHub' : 'Google'}
+              Connected via {user.provider === "github" ? "GitHub" : "Google"}
             </Badge>
           </div>
 
@@ -118,8 +129,8 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                Email cannot be changed as it's linked to your{' '}
-                {user.provider === 'github' ? 'GitHub' : 'Google'} account
+                Email cannot be changed as it's linked to your{" "}
+                {user.provider === "github" ? "GitHub" : "Google"} account
               </p>
             </div>
 

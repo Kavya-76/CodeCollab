@@ -21,11 +21,12 @@ const AuthButtons: React.FC<AuthButtonsProps> = ({ onUserContinue }) => {
   const handleLogin = async (method: "google" | "github") => {
     const user =
       method === "google" ? await googleLogin() : await githubLogin();
+    console.log("The user is",user);
     if (user) {
       try {
         await axios.post("http://localhost:5000/api/auth/signup", {
           uid: user.uid,
-          displayName: user.displayName,
+          displayName: user.displayName || " ",
           email: user.email,
           photoURL: user.photoURL,
           provider: method,
