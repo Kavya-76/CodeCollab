@@ -137,7 +137,7 @@ const Dashboard = () => {
   const handleOpenCode = (codeId: string, codeName: string) => {
     // In real app, this would load the actual room/session
     toast.success(`Opening ${codeName}...`);
-    navigate(`/room/existing_${codeId}`);
+    navigate(`/code/${codeId}`);
   };
 
   const handleLogout = async () => {

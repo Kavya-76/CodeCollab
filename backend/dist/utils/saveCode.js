@@ -18,14 +18,14 @@ export const saveCodeForUser = (uid, code, language) => __awaiter(void 0, void 0
             return;
         }
         // Ensure max 5 code history
-        if (user.savedCodes.length >= 5) {
-            user.savedCodes.shift(); // remove the oldest
+        if (user.rooms.size >= 5) {
+            // user.savedCodes.shift(); // remove the oldest
         }
-        user.savedCodes.push({
-            language,
-            content: code,
-            savedAt: new Date(),
-        });
+        // user.rooms.set(roomI{
+        //   language,
+        //   content: code,
+        //   savedAt: new Date(),
+        // });
         yield user.save();
         console.log(`✅ Code saved for user ${uid}`);
     }

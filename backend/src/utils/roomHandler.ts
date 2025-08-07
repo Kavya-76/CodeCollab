@@ -103,17 +103,15 @@ async function saveAndCleanIfEmpty(roomId: string) {
     const user = await User.findOne({ uid });
     if (!user) continue;
 
-    if (user.rooms.length >= 5) {
+    if (user.rooms.size >= 5) {
       // Optional: notify user via socket about save limit
       continue;
     }
 
-    user.rooms.push({
+    user.rooms.set(roomId, {
       roomId,
-      adminName: room.adminName,
       code: room.code,
       language: room.language,
-      collaborators: Array.from(room.members.values()).map((m) => m.name),
       joinedAt: room.createdAt,
       leftAt: new Date(),
     });
