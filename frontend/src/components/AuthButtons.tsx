@@ -16,6 +16,8 @@ interface AuthButtonsProps {
   onUserContinue: () => void;
 }
 
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
 const AuthButtons: React.FC<AuthButtonsProps> = ({ onUserContinue }) => {
   const navigate = useNavigate();
   const handleLogin = async (method: "google" | "github") => {
@@ -24,7 +26,7 @@ const AuthButtons: React.FC<AuthButtonsProps> = ({ onUserContinue }) => {
     console.log("The user is",user);
     if (user) {
       try {
-        await axios.post("http://localhost:5000/api/auth/signup", {
+        await axios.post(`${backendUrl}/api/auth/signup`, {
           uid: user.uid,
           displayName: user.displayName || " ",
           email: user.email,

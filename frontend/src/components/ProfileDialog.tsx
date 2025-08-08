@@ -29,6 +29,8 @@ interface ProfileDialogProps {
   user: UserData;
 }
 
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
 const ProfileDialog: React.FC<ProfileDialogProps> = ({
   open,
   onOpenChange,
@@ -54,7 +56,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
       const idToken = await firebaseUser.getIdToken();
 
       await axios.put(
-        "http://localhost:5000/api/user/updateDisplayName",
+        `${backendUrl}/api/user/updateDisplayName`,
         { displayName: name },
         {
           headers: {

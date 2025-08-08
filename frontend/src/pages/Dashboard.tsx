@@ -42,6 +42,8 @@ interface UserData {
   savedCodes: CodeData[];
 }
 
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
 // Mock previous codes data
 const mockPreviousCodes = [
   {
@@ -87,8 +89,7 @@ const Dashboard = () => {
       if (firebaseUser) {
         try {
           const idToken = await firebaseUser.getIdToken();
-
-          const res = await axios.get("http://localhost:5000/api/user/getInfo", {
+          const res = await axios.get(`${backendUrl}/api/user/getInfo`, {
             headers: {
               Authorization: `Bearer ${idToken}`,
             },

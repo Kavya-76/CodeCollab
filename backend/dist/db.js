@@ -10,7 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 import mongoose from "mongoose";
 const connectDB = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const conn = yield mongoose.connect(process.env.MONGODB_URI || "your-mongodb-uri-here");
+        const conn = yield mongoose.connect(process.env.MONGODB_URI || "");
         console.log(`✅ MongoDB connected: ${conn.connection.host}`);
     }
     catch (error) {
