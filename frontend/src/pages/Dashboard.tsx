@@ -15,7 +15,6 @@ import {
   Code,
   Clock,
   Users,
-  Settings,
   LogOut,
   Github,
 } from "lucide-react";
@@ -44,7 +43,7 @@ interface UserData {
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-// Mock previous codes data
+// Mock previous codes data for UI fallback
 const mockPreviousCodes = [
   {
     id: "1",
@@ -80,6 +79,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<UserData | null>(null);
   const [codes, setCodes] = useState<CodeData[]>([]);
+  const [loadingUser, setLoadingUser] = useState(true); // Loading state
 
   const [showJoinDialog, setShowJoinDialog] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
@@ -88,18 +88,20 @@ const Dashboard = () => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         try {
+          setLoadingUser(true);
           const idToken = await firebaseUser.getIdToken();
           const res = await axios.get(`${backendUrl}/api/user/getInfo`, {
             headers: {
               Authorization: `Bearer ${idToken}`,
             },
           });
-
           setUser(res.data);
           setCodes(res.data.savedCodes || []);
         } catch (error) {
           console.error("Error fetching user info:", error);
           toast.error("Failed to load user data");
+        } finally {
+          setLoadingUser(false);
         }
       } else {
         navigate("/");
@@ -107,36 +109,43 @@ const Dashboard = () => {
     });
 
     return () => unsubscribe();
-  }, [user]);
+  }, []); // Only run once on mount
 
   const handleCreateRoom = async () => {
-    const username = user?.displayName;
-    const {userId, roomId} = await createRoom();
+    if (!user) {
+      toast.error("User data not loaded yet");
+      return;
+    }
+    const username = user.displayName;
+    const { userId, roomId } = await createRoom();
     toast.success(`Created new room ${roomId}!`);
     navigate(`/room/${roomId}`, {
       state: {
         userId,
         username,
         isGuest: false,
-        avatar: user?.photoURL
+        avatar: user.photoURL,
       },
     });
   };
 
   const handleJoinRoom = (roomId: string) => {
-    const username = user?.displayName;
-    const userId = user?.uid;
+    if (!user) {
+      toast.error("User data not loaded yet");
+      return;
+    }
+    const username = user.displayName;
+    const userId = user.uid;
     toast.success(`Joining room ${roomId}!`);
     navigate(`/room/${roomId}`, {
       state: {
         username,
-        userId
+        userId,
       },
     });
   };
 
   const handleOpenCode = (codeId: string, codeName: string) => {
-    // In real app, this would load the actual room/session
     toast.success(`Opening ${codeName}...`);
     navigate(`/code/${codeId}`);
   };
@@ -151,6 +160,24 @@ const Dashboard = () => {
       toast.error("Logout failed");
     }
   };
+
+  // Show loading UI while user data is being fetched
+  if (loadingUser) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-lg text-muted-foreground">Loading user data...</p>
+      </div>
+    );
+  }
+
+  // Show error if user data could not be loaded and auth failed
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-lg text-red-500">User not authenticated or data not found.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -176,15 +203,15 @@ const Dashboard = () => {
                 className="flex items-center space-x-2"
               >
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={user?.photoURL} />
+                  <AvatarImage src={user.photoURL} />
                   <AvatarFallback>
-                    {user?.displayName
+                    {user.displayName
                       .split(" ")
                       .map((n) => n[0])
                       .join("")}
                   </AvatarFallback>
                 </Avatar>
-                <span className="hidden sm:block">{user?.displayName}</span>
+                <span className="hidden sm:block">{user.displayName}</span>
               </Button>
 
               <Button variant="ghost" size="sm" onClick={handleLogout}>
@@ -202,7 +229,7 @@ const Dashboard = () => {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h2 className="text-3xl font-bold mb-2">
-                Welcome back, {user?.displayName.split(" ")[0]}! 👋
+                Welcome back, {user.displayName.split(" ")[0]}! 👋
               </h2>
               <p className="text-muted-foreground">
                 Ready to code together? Create a new room or continue working on
@@ -296,12 +323,8 @@ const Dashboard = () => {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">
-                      Total Projects
-                    </p>
-                    <p className="text-2xl font-bold">
-                      {mockPreviousCodes.length}
-                    </p>
+                    <p className="text-sm text-muted-foreground">Total Projects</p>
+                    <p className="text-2xl font-bold">{mockPreviousCodes.length}</p>
                   </div>
                   <Code className="h-8 w-8 text-code-blue" />
                 </div>
@@ -312,16 +335,8 @@ const Dashboard = () => {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">
-                      Collaborations
-                    </p>
-                    <p className="text-2xl font-bold">
-                      0
-                      {/* {mockPreviousCodes.reduce(
-                        (acc, code) => acc + code.collaborators,
-                        0
-                      )} */}
-                    </p>
+                    <p className="text-sm text-muted-foreground">Collaborations</p>
+                    <p className="text-2xl font-bold">0</p>
                   </div>
                   <Users className="h-8 w-8 text-code-purple" />
                 </div>
@@ -332,18 +347,16 @@ const Dashboard = () => {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">
-                      Account Type
-                    </p>
+                    <p className="text-sm text-muted-foreground">Account Type</p>
                     <p className="text-lg font-medium flex items-center gap-2">
                       <Github className="h-4 w-4" />
-                      {user?.provider === "github" ? "GitHub" : "Google"}
+                      {user.provider === "github" ? "GitHub" : "Google"}
                     </p>
                   </div>
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user?.photoURL} />
+                    <AvatarImage src={user.photoURL} />
                     <AvatarFallback>
-                      {user?.displayName
+                      {user.displayName
                         .split(" ")
                         .map((n) => n[0])
                         .join("")}
