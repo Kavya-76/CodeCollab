@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 export const createRoom = async () => {
   const auth = getAuth();
   const user = auth.currentUser;
-
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const headers: Record<string, string> = {};
 
   if (user) {
@@ -25,7 +25,7 @@ export const createRoom = async () => {
   }
 
   const response = await axios.post(
-    "http://localhost:5000/api/room/create",
+    `${backendUrl}/api/room/create`,
     {},
     { headers }
   );
